@@ -7,6 +7,7 @@ function TodoList() {
   const [formDate, setFormDate] = useState("today")
   const [todos, setTodos]: any = useState([])
   const [updateTime, setUpdateTime] = useState(Date.now())
+  const [listView, setListView] = useState(false)
   //gets data from DB
   const fetchPost = async () => {
     await getDocs(collection(db, "todos")).then((querySnapshot) => {
@@ -20,13 +21,12 @@ function TodoList() {
   // handles submit
   function handleSubmit(e) {
     e.preventDefault()
-    const data = [formTask, formDate]
+    const data = [formTask, formDate, false]
     addTodo(data)
+    setUpdateTime(Date.now())
     setFormTask("")
     setFormDate("today")
-    setUpdateTime(Date.now())
   }
-  async function handleListView() {}
   // handle task name and "date"
   const handleTaskInput = (e) => {
     setFormTask(e.target.value)
@@ -51,26 +51,29 @@ function TodoList() {
       updateTodo(
         e.target.parentNode.id,
         e.target.parentNode.children[4].innerText,
-        e.target.parentNode.children[3].innerText
+        e.target.parentNode.children[3].innerText,
+        e.target.parentNode.children[0].checked
       )
     }
   }
   // Delete task
   const handleDelete = (e) => {
-    e.target.parentNode.remove()
+    console.log(e.target.parentNode)
     deleteTask(e.target.parentNode.id)
+    e.target.parentNode.remove()
   }
   // Clear tasks (Delete All?)
   const handleClear = (e) => {
     const allTasks = document.querySelectorAll(".task")
-    allTasks.forEach((task) => {
-      task.remove()
-      deleteTask(task.id)
-    })
+    console.log(allTasks)
+    if (allTasks.length > 0) {
+      allTasks.forEach((task) => {
+        console.log(task)
+        deleteTask(task.id)
+        task.remove()
+      })
+    }
   }
-  useEffect(() => {
-    fetchPost()
-  }, [updateTime])
   // Checkbox to apply line-through text effect
   const strikeComplete = (e) => {
     if (e.target.checked === true) {
@@ -78,16 +81,87 @@ function TodoList() {
         "line-through"
       e.target.parentNode.getElementsByTagName("button")[0].style.display =
         "none"
+      updateTodo(
+        e.target.parentNode.id,
+        e.target.parentNode.children[4].innerText,
+        e.target.parentNode.children[3].innerText,
+        e.target.parentNode.children[0].checked
+      )
+      setUpdateTime(Date.now())
     } else {
       e.target.parentNode.getElementsByTagName("div")[1].style.textDecoration =
         "none"
 
       e.target.parentNode.getElementsByTagName("button")[0].style.display =
         "flex"
+      updateTodo(
+        e.target.parentNode.id,
+        e.target.parentNode.children[4].innerText,
+        e.target.parentNode.children[3].innerText,
+        e.target.parentNode.children[0].checked
+      )
+      setUpdateTime(Date.now())
+    }
+  }
+  // handle list view
+  function handleListView() {
+    if (!listView) {
+      const todoList = document.getElementById("todos")
+      const dateList: any = []
+      const taskList: any = []
+      for (let task in todoList?.childNodes) {
+        if (todoList?.childNodes[task].tagName === "DIV") {
+          if (
+            !dateList.includes(todoList?.childNodes[task].children[3].innerText)
+          ) {
+            dateList.push(todoList?.childNodes[task].children[3].innerText)
+          }
+        }
+      }
+      dateList.sort()
+      let child = todoList?.lastElementChild
+      while (child) {
+        taskList.push(child)
+        todoList?.removeChild(child)
+        child = todoList?.lastElementChild
+      }
+      dateList.forEach((date: string) => {
+        const day = document.createElement("span")
+        const sortedList = document.createElement("div")
+        day.innerText = date
+        sortedList.appendChild(day)
+        todoList?.appendChild(sortedList)
+      })
+      taskList.forEach((task) => {
+        const index = dateList.indexOf(task.children[3].innerText)
+        todoList?.children[index].append(task)
+      })
+      setListView(true)
+    } else {
+      const taskList: any = []
+      const todoList = document.getElementById("todos")
+      let child = todoList?.lastElementChild
+      while (child) {
+        let subChild = child.lastElementChild
+        while (subChild) {
+          if (subChild.tagName === "DIV") {
+            taskList.push(subChild)
+          }
+          child.removeChild(subChild)
+          subChild = child.lastElementChild
+        }
+        todoList?.removeChild(child)
+        child = todoList?.lastElementChild
+      }
+      taskList.forEach((el) => {
+        todoList?.appendChild(el)
+      })
+      setListView(false)
     }
   }
   useEffect(() => {
     fetchPost()
+    console.log(updateTime, "effect")
   }, [updateTime])
   // The todo list
   return (
@@ -106,15 +180,39 @@ function TodoList() {
           {todos?.map((el, i) => {
             return (
               <div key={i} className="task" id={el.id}>
-                <input type="checkbox" onClick={strikeComplete} />
-                <button className="taskButton" onClick={handleEdit}>
-                  &#9998;
-                </button>
+                <input
+                  type="checkbox"
+                  onChange={strikeComplete}
+                  checked={el.todo[2]}
+                />
+                {el.todo[2] === false ? (
+                  <button className="taskButton" onClick={handleEdit}>
+                    &#9998;
+                  </button>
+                ) : (
+                  <button
+                    className="taskButton"
+                    onClick={handleEdit}
+                    style={{ display: "none" }}
+                  >
+                    &#9998;
+                  </button>
+                )}
+
                 <button className="taskButton" onClick={handleDelete}>
                   &#x1F5D1;
                 </button>
-                <div className="taskDate">{el.todo[1]}</div>
-                <div className="taskName">{el.todo[0]}</div>
+                <div className={`taskDate ${el.todo[1]}`}>{el.todo[1]}</div>
+                {el.todo[2] === false ? (
+                  <div className="taskName">{el.todo[0]}</div>
+                ) : (
+                  <div
+                    className="taskName"
+                    style={{ textDecoration: "line-through" }}
+                  >
+                    {el.todo[0]}
+                  </div>
+                )}
               </div>
             )
           })}

@@ -17,10 +17,10 @@ const addTodo = async (data) => {
     console.error("Error adding document: ", e)
   }
 }
-const updateTodo = async (fbid, name, date) => {
+const updateTodo = async (fbid, name, date, tick) => {
   const docRef = doc(db, "todos", fbid)
   await updateDoc(docRef, {
-    todo: [name, date],
+    todo: [name, date, tick],
   })
 }
 const deleteTask = async (fbid) => {

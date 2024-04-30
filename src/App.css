@@ -113,6 +113,7 @@ body {
   justify-content: center;
   text-align: center;
   order: 3;
+  border-radius: 10px;
 }
 .taskButton {
   justify-content: center;
@@ -120,4 +121,15 @@ body {
   font-size: 15px;
   width: 35px;
   order: 4;
+}
+.today {
+  background-color: pink;
+}
+.tomorrow {
+  background-color: dodgerblue;
+  padding: 0 5px;
+}
+span {
+  display: block;
+  font-size: 25px;
 }
